@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
@@ -30,6 +32,7 @@ def main() -> None:
     """Run the complete AutoML pipeline."""
 
     config = AppConfig()
+    quick_run = os.getenv("AUTOML_QUICK_RUN", "0").strip() == "1"
     for path in [config.models_dir, config.reports_dir, config.figures_dir, config.plots_dir, config.logs_dir]:
         ensure_directory(path)
 
@@ -86,10 +89,15 @@ def main() -> None:
     tuner = HyperparameterTuner(
         cv=config.cv_folds,
         scoring=config.scoring,
-        n_iter=config.tuning_iterations,
+        n_iter=3 if quick_run else config.tuning_iterations,
         random_state=config.random_state,
     )
-    tuned_models = tuner.tune(base_models, X_train, y_train)
+    tuned_models = tuner.tune(
+        base_models,
+        X_train,
+        y_train,
+        model_names_to_tune={"Random Forest"} if quick_run else None,
+    )
 
     print("Evaluating Models...")
     evaluator = Evaluator()

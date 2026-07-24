@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Iterable, Optional
 
 from sklearn.model_selection import RandomizedSearchCV
 
@@ -19,12 +19,20 @@ class HyperparameterTuner:
     n_iter: int = 20
     random_state: int = 42
 
-    def tune(self, models: Dict[str, object], X_train, y_train) -> Dict[str, object]:
+    def tune(
+        self,
+        models: Dict[str, object],
+        X_train,
+        y_train,
+        model_names_to_tune: Optional[Iterable[str]] = None,
+    ) -> Dict[str, object]:
         """Tune the configured subset of models and return the best estimators."""
 
         tuned_models = dict(models)
         configs = model_configurations(self.random_state)
         target_models = {"Random Forest", "XGBoost", "LightGBM"}
+        if model_names_to_tune is not None:
+            target_models = target_models.intersection(set(model_names_to_tune))
 
         for model_name in target_models:
             if model_name not in models or model_name not in configs:
